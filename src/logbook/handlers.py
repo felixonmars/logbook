@@ -305,17 +305,17 @@ class Handler(ContextObject, metaclass=_HandlerType):
 
         Check :class:`Flags` for more information.
         """
-        try:
-            behaviour = Flags.get_flag("errors", "print")
-            if behaviour == "raise":
-                raise exc_info[1]
-            elif behaviour == "print":
+        behaviour = Flags.get_flag("errors", "print")
+        if behaviour == "raise":
+            raise exc_info[1]
+        elif behaviour == "print":
+            try:
                 traceback.print_exception(*exc_info, file=sys.stderr)
                 sys.stderr.write(
                     f"Logged from file {record.filename}, line {record.lineno}\n"
                 )
-        except OSError:
-            pass
+            except OSError:
+                pass
 
 
 class NullHandler(Handler):
