@@ -1,0 +1,4 @@
+An error from a handler now propagates when the ``errors`` flag of
+:class:`~logbook.Flags` is set to ``"raise"``. Logbook previously discarded any
+:exc:`OSError`, which is how most handlers fail, so the logging call returned
+as if the record had been written.
