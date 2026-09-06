@@ -1,5 +1,6 @@
 import re
 import sys
+from contextlib import redirect_stderr
 
 import pytest
 
@@ -10,6 +11,30 @@ from .utils import capturing_stderr_context
 __file_without_pyc__ = __file__
 if __file_without_pyc__.endswith(".pyc"):
     __file_without_pyc__ = __file_without_pyc__[:-1]
+
+
+def test_handler_error_without_stderr(logger):
+    with logbook.StderrHandler(), logbook.Flags(errors="print"):
+        with redirect_stderr(None):
+            logger.warning("unavailable stderr")
+
+
+def test_handler_error_without_stderr_under_raise(logger):
+    with logbook.StderrHandler(), logbook.Flags(errors="raise"):
+        with redirect_stderr(None):
+            with pytest.raises(AttributeError):
+                logger.warning("unavailable stderr")
+
+
+def test_handler_error_with_closed_stderr(tmp_path, logger):
+    # A closed stream is truthy, so it passes the guard and its error is left
+    # to the caller, which is what CPython does too.
+    with (tmp_path / "stderr.log").open("w") as stream:
+        pass
+    with logbook.StderrHandler(), logbook.Flags(errors="print"):
+        with redirect_stderr(stream):
+            with pytest.raises(ValueError):
+                logger.warning("unavailable stderr")
 
 
 def test_handler_exception(activation_strategy, logger):

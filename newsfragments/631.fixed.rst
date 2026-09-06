@@ -1,0 +1,1 @@
+Handler failures are reported without raising a further error when :data:`sys.stderr` is missing, as it is under ``pythonw``.
