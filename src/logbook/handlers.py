@@ -308,7 +308,7 @@ class Handler(ContextObject, metaclass=_HandlerType):
         behaviour = Flags.get_flag("errors", "print")
         if behaviour == "raise":
             raise exc_info[1]
-        elif behaviour == "print":
+        elif behaviour == "print" and sys.stderr:
             try:
                 traceback.print_exception(*exc_info, file=sys.stderr)
                 sys.stderr.write(
