@@ -1,0 +1,3 @@
+Passing an ``exc_info`` to :meth:`~logbook.Handler.handle_error` that is not
+the exception being handled is deprecated. Report a failure from inside the
+``except`` block that caught it.

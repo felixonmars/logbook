@@ -78,3 +78,57 @@ def test_formatting_exception():
         errormsg,
         re.M | re.S,
     )
+
+
+def test_handle_error_reraises_the_active_exception_untouched(logger, recwarn):
+    class ErroringHandler(logbook.Handler):
+        def emit(self, record):
+            raise OSError(5, "sink down")
+
+    with ErroringHandler(bubble=False), logbook.Flags(errors="raise"):
+        with pytest.raises(OSError) as caught:
+            logger.warning("I warn you.")
+
+    frames = []
+    tb = caught.value.__traceback__
+    while tb is not None:
+        frames.append(tb.tb_frame.f_code.co_name)
+        tb = tb.tb_next
+
+    assert "handle_error" not in frames
+    assert frames[-1] == "emit"
+    assert [w for w in recwarn if w.category is DeprecationWarning] == []
+
+
+def test_handle_error_with_a_stale_exc_info_is_deprecated():
+    record = logbook.LogRecord("Test Logger", logbook.WARNING, "Hello")
+    handler = logbook.Handler()
+
+    try:
+        raise OSError(5, "sink down")
+    except OSError:
+        stale = sys.exc_info()
+
+    with logbook.Flags(errors="silent"):
+        with pytest.deprecated_call(match="not the active exception"):
+            handler.handle_error(record, stale)
+
+
+def test_handle_error_stale_exc_info_wins_over_the_active_exception(logger):
+    class RetryingHandler(logbook.Handler):
+        def emit(self, record):
+            try:
+                raise OSError(28, "disk full")
+            except OSError:
+                original = sys.exc_info()
+            try:
+                raise TimeoutError("retry also failed")
+            except TimeoutError:
+                with pytest.deprecated_call():
+                    self.handle_error(record, original)
+
+    with RetryingHandler(bubble=False), logbook.Flags(errors="raise"):
+        with pytest.raises(OSError) as caught:
+            logger.warning("I warn you.")
+
+    assert caught.value.errno == 28

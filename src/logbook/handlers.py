@@ -304,9 +304,26 @@ class Handler(ContextObject, metaclass=_HandlerType):
         this function depends on the current `errors` setting.
 
         Check :class:`Flags` for more information.
+
+        .. deprecated:: 1.11
+           Passing an ``exc_info`` other than the exception currently being
+           handled.  Report a failure from inside the ``except`` block that
+           caught it.
         """
+        reraise_active = exc_info[1] is sys.exc_info()[1]
+        if not reraise_active:
+            warnings.warn(
+                "Passing an exc_info that is not the active exception to "
+                "handle_error is deprecated. Report the failure from inside "
+                "the except block that caught it.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         behaviour = Flags.get_flag("errors", "print")
         if behaviour == "raise":
+            if reraise_active:
+                raise
             raise exc_info[1]
         elif behaviour == "print" and sys.stderr:
             try:
